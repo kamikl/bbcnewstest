@@ -1,6 +1,7 @@
 <html>
 	<head>
 		<style>
+			<!-- Styling -->
 			#sortable {
 				list-style-type: none;
 				margin: 0;
@@ -100,10 +101,6 @@
 		
 		<script>
 			$(document).ready(function() {
-				 
-			
-			
-			
 				<!-- Enables sortable property on sort list, disable selection -->
 				$("#sortable").sortable({
 					axis:'y',
@@ -167,6 +164,7 @@
 								$('#article').append("</br>");
 							}
 						}
+						<!-- If GET request fails, alert the user accordingly -->
 					}).fail(function() {
 						alert('Unable to reach server to return article data'); 
 					});;
@@ -242,14 +240,13 @@
 					$("#submit").click(function() {
 						var data = $('#sortable').sortable('toArray');
 						$.post('submit.php', {data:data})
+						<!-- If POST request fails, alert the user -->
 						.fail(function() {
 							alert("Unable to post data");
 						});
 					});
 				}
 			});
-				
-			
 		</script>
 	</head>
 	
