@@ -1,0 +1,276 @@
+<html>
+	<head>
+		<style>
+			#sortable {
+				list-style-type: none;
+				margin: 0;
+				padding: 0;		
+			}
+			#sortable li {
+				padding: 0.4em;
+				padding-left: 1.5em;
+				font-size: 14pt;
+				height: 18px;
+				width:100px;
+				margin-left: auto;
+				margin-right: auto;
+				display: block;
+			}
+			#sortable li span {
+				position: absolute;
+				margin-left: -1.3em;
+			}
+			
+			button, input {
+				background-color: gray;
+				border: 1px solid black;
+				color: white;
+				padding: 10px 24px;
+				cursor: pointer;
+			}
+			
+			button {
+				float: left;
+				margin-left:auto;
+				margin-right:auto;
+				display: block;
+				width: 50%;
+			}
+			
+			#buttons {
+				margin-left:auto;
+				margin-right:auto;
+				margin-bottom:15px;
+				width:50%;
+			}
+			
+			#finish {
+				width:100%;			
+			}
+			
+			#article {
+				max-width: 80%;
+				margin-left: auto;
+				margin-right: auto;
+			}
+			
+			#wrapper{
+				max-width:50%;
+				margin-left:auto;
+				margin-right:auto;
+				background-color:white;
+				border: 1px solid black;
+			}
+			
+			
+			#rating {
+				width: 50%;
+				margin-left: auto;
+				margin-right: auto;
+				display:block;
+			}
+			
+			#rating input {
+				margin-left: auto;
+				margin-right: auto;
+				display: block;
+				margin-top: 10px;
+			}
+			
+			body {
+				font-family: Calibri,Candara,Segoe,Segoe UI,Optima,Arial,sans-serif; 
+				background-image: url("http://onebikeshop.com/wp-content/uploads/2017/12/Gray-plain-website-background-1024x576.jpg");
+			}
+			
+			img {
+				margin-left: auto;
+				margin-right: auto;
+				display: block;
+				max-width: 100%;
+				height: auto;
+				width: auto
+			}
+		</style>
+		
+		<!-- Importing JQuery + JQuery UI -->
+		<link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+		<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+		<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+		
+		
+		<script>
+			$(document).ready(function() {
+				 
+			
+			
+			
+				<!-- Enables sortable property on sort list, disable selection -->
+				$("#sortable").sortable({
+					axis:'y',
+					helper: function(event, elm) {
+						return $(elm).clone().position({
+							my: "left",
+							at: "left",
+							of: elm
+						});
+					}
+				});
+				$("#sortable").disableSelection();
+				
+				<!-- Initially set currentPage to 1 -->
+				var currentPage = 1;				
+		
+				<!-- Function to switch displayed article -->
+				function changeArticle(articleNum) {
+					<!-- Clears current article -->
+					$("#article").empty();
+					<!-- Get request with current article number to get JSON data -->
+					$.get("article.php", {article:articleNum},  function(data) {
+						<!-- Parse JSON data to make it usable -->
+						var json = JSON.parse(data);
+						<!-- Set article title -->
+						document.title = json.title;
+						<!-- Set heading of article -->
+						$('#article').append("</br>");
+						$('#article').append('<h1>'+ json.body[0].model.text + '</h1>');
+						<!-- Iterate through body of article data to check for different types of data -->
+						for(var i=1; i < json.body.length; i++) {
+							<!-- If the current item is a paragraph: -->
+							if (json.body[i].type == "paragraph") {
+								<!-- Adds paragraph to article -->
+								$('#article').append("</br>");
+								$('#article').append("<b>" + json.body[i].model.text + "</b>");
+								$('#article').append("</br>");
+							}
+							<!-- If current item is an image: -->
+							else if (json.body[i].type == "image") {
+								<!-- Adds image to article -->
+								$('#article').append("</br>");
+								$('#article').append('<img src="' + json.body[i].model.url + '" alt="' + json.body[i].model.altText + '" height="' + json.body[i].model.height + '" width="' + json.body[i].model.width +'">');
+							}
+							<!-- Else if it is a list:  -->
+							else {
+								<!-- Checks list type (ordered/unordered)  -->
+								if (json.body[i].model.type == "ordered") {
+									$type = "ol";
+								}
+								else {
+									$type = "ul";
+								}
+								<!-- Adds list to article -->
+								$('#article').append("</br>");
+								$('#article').append('<'+$type+'>')
+								for (var j=0; j < json.body[i].model.items.length; j++) {
+									$('#article').append("<li>" + json.body[i].model.items[j] + "</li>");
+								}
+								$('#article').append('</'+$type+'>')
+								$('#article').append("</br>");
+							}
+						}
+					}).fail(function() {
+						alert('Unable to reach server to return article data'); 
+					});;
+					
+					
+				}
+				
+				<!-- Loads first article initially -->
+				changeArticle(1);
+				
+				
+				<!-- Previous button click behaviour -->
+				$('#previous').click(function() {
+						<!-- Counts down current page -->
+						currentPage-=1;
+						<!-- Changes article to new page -->
+						changeArticle(currentPage);
+						<!-- If the page is now the first, disable the previous button -->
+						if (currentPage == 1) {
+							$("#previous").attr("disabled", "disabled");
+						}
+						<!-- If the page is now the fourth, enable the next button -->
+						if (currentPage == 4) {
+							$("#next").removeAttr("disabled");
+						}
+					
+				});	
+				
+				<!-- Next button click behaviour -->
+				$('#next').click(function() {
+						<!-- Counts up current page -->
+						currentPage+=1;
+						changeArticle(currentPage);
+						<!-- If the page is now the fifth, disable the next button, and make finish button visible -->
+						if (currentPage == 5) {
+							$("#next").attr("disabled", "disabled");
+							if(!$('#finish').length){
+								finishButton();
+							}
+						}
+						<!-- If the page is now the second, enable the previous button -->
+						if (currentPage == 2) {
+							$("#previous").removeAttr("disabled");
+						}
+					
+				});	
+				
+				<!-- Creates finish button  -->
+				function finishButton() {
+					var button = '<button type="button" id ="finish">Finish and Rate</button>'
+					$('#buttons').append('</br>');
+					$('#buttons').append(button);
+					
+					<!-- Upon clicking finish button, article and buttons disappear, and rating page is displayed -->
+					$('#finish').click(function() {
+						$("#article").empty();
+						$("#buttons").empty();
+						rating();
+					});	
+				}
+				
+				<!-- Displays rating page -->
+				function rating() {
+					$('#article').append('<h1>Sort the articles from 1-5, 1 being the highest, and 5 being the lowest ranked.</h1>');
+					<!-- Creates different article items to rearrange, and submit button -->
+					$('#sortable').append('<li class="ui-state-default" id="a1"><span class="ui-icon ui-icon-arrowthick-2-n-s"></span>Article 1</li>');
+					$('#sortable').append('<li class="ui-state-default" id="a2"><span class="ui-icon ui-icon-arrowthick-2-n-s"></span>Article 2</li>');
+					$('#sortable').append('<li class="ui-state-default" id="a3"><span class="ui-icon ui-icon-arrowthick-2-n-s"></span>Article 3</li>');
+					$('#sortable').append('<li class="ui-state-default" id="a4"><span class="ui-icon ui-icon-arrowthick-2-n-s"></span>Article 4</li>');
+					$('#sortable').append('<li class="ui-state-default" id="a5"><span class="ui-icon ui-icon-arrowthick-2-n-s"></span>Article 5</li>');
+					$('#rating').append('<input type="submit" id="submit" value="Submit">');
+					<!-- Upon pressing submit button, array of order of the articles is sent by POST method -->
+					$("#submit").click(function() {
+						var data = $('#sortable').sortable('toArray');
+						$.post('submit.php', {data:data})
+						.fail(function() {
+							alert("Unable to post data");
+						});
+					});
+				}
+			});
+				
+			
+		</script>
+	</head>
+	
+	<body>
+	<!-- Navigation Buttons  -->
+	<div id="buttons">
+		<button type="button" id ="previous" disabled="disabled">Previous</button>
+		<button type="button" id ="next">Next</button>
+	</div>
+	
+	<!-- Article Content -->
+	<div id="wrapper">
+		<div id="article">
+		</div>
+	</div>
+	
+	<!-- Rating Content -->
+	<div id="rating">
+		<ul id="sortable">
+		</ul>
+	</div>
+	
+	</body>
+</html>
